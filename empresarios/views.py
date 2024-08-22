@@ -156,3 +156,34 @@ def gerenciar_proposta(request, id):
 
     pi.save()
     return redirect(f'/empresarios/empresa/{pi.empresa.id}')
+
+from django.utils import timezone
+from datetime import timedelta
+
+def dashboard(request, id):
+    empresa = Empresas.objects.get(id=id)
+    today = timezone.now().date()
+
+    seven_days_ago = today - timedelta(days=6)
+
+    propostas_por_dia = {}
+
+    for i in range(7):
+        day = seven_days_ago + timedelta(days=i)
+
+        propostas = PropostaInvestimento.objects.filter(
+            empresa = empresa,
+            status='PA',
+            data=day
+        )
+
+        total_dia = 0
+        for proposta in propostas:
+            total_dia += proposta.valor
+
+        propostas_por_dia[day.strftime('%d/%m/%Y')] = int(total_dia)
+
+    for dia, total in propostas_por_dia.items():
+        print(f'Data: {dia}, Total de Propostas: {total}')
+    
+    return render(request, 'dashboard.html', {'labels': list(propostas_por_dia.keys()), 'values': list(propostas_por_dia.values)})
